@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
+from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from typing import List
 
@@ -69,23 +70,53 @@ class Book(BaseModel):
     published_date: str
     page_count: int
     language: str
+    
+class UpdateBookModel(BaseModel):
+    title: str
+    publisher: str
+    page_count: int
+    language: str
+    
+def raiseException():
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Book not found')
 
 @app.get('/books', response_model=List[Book])
 async def get_all_books():
     return books
 
-@app.get('/books')
-async def create_a_book() -> dict:
-    pass
+@app.post('/books', status_code=status.HTTP_201_CREATED)
+async def create_a_book(book_data: Book) -> dict:
+    new_book = book_data.model_dump()
+    
+    books.append(new_book)
+    return new_book
 
 @app.get('/books/{book_id}')
 async def get_book(book_id:int) -> dict:
-    pass
+    for book in books:
+        if book['id'] == book_id:
+            return book
+    
+    raiseException()
 
-@app.get('/books/{book_id}')
-async def update_book(book_id:int) -> dict:
-    pass
+@app.patch('/books/{book_id}')
+async def update_book(book_id:int, UpdateBook:UpdateBookModel) -> dict:
+    for book in books:
+        if book['id'] == book_id:
+            book['title'] == UpdateBook.title
+            book['publisher'] == UpdateBook.publisher
+            book['page_count'] == UpdateBook.page_count
+            book['languge'] == UpdateBook.language
+            
+            return book
+        
+    raiseException()
 
-@app.get('/books/{book_id}')
+@app.delete('/books/{book_id}')
 async def delete_book(book_id:int) -> dict:
-    pass
+    for book in books:
+        if book['id'] == book_id:
+            books.remove(book)
+    
+    raiseException()
+
